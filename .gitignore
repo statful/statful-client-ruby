@@ -1,0 +1,7 @@
+*.gem
+coverage
+test.rb
+Gemfile.lock
+.yardoc
+doc
+.idea
