@@ -146,7 +146,7 @@ $ bundle install
 
 ### Tests
 
-It uses [rspec](htp://rspec.info/) and [minitest](http://docs.seattlerb.org/minitest/) to specify the unit tests suite.
+It uses [rspec](http://rspec.info/) and [minitest](http://docs.seattlerb.org/minitest/) to specify the unit tests suite.
 
 There's a rake task which runs the specs:
 
