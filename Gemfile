@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
 
-gemspec :name => 'telemetron-ruby'
+gemspec :name => 'statful-ruby'
 

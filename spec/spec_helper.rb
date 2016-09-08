@@ -29,7 +29,7 @@ end
 
 Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new({:color => true, :slow_count => 5 }))
 
-require 'telemetron'
+require 'statful'
 
 # Shamelessly stolen from the statsd-ruby client
 class FakeUDPSocket

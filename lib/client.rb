@@ -1,30 +1,38 @@
 require 'socket'
 require 'delegate'
+require 'net/http'
 
-# Telemetron Client Instance
+# Statful Client Instance
 #
 # @attr_reader config [Hash] Current client config
-class TelemetronClient
+class StatfulClient
   attr_reader :config
 
   # Initialize the client
   #
   # @param [Hash] config Client bootstrap configuration
-  # @option config [String] :host Destination host
-  # @option config [String] :port Destination port
-  # @option config [String] :prefix Global metric prefix *required*
+  # @option config [String] :host Destination host *required*
+  # @option config [String] :port Destination port *required*
+  # @option config [String] :transport Transport protocol, one of (udp or http) *required*
+  # @option config [Integer] :timeout Timeout for http transport
+  # @option config [String] :token Authentication account token for http transport
   # @option config [String] :app Global metric app tag
   # @option config [TrueClass/FalseClass] :dry Enable dry-run mode
   # @option config [Object] :logger Logger instance that supports debug (if dryrun is enabled) and error methods
   # @option config [Hash] :tags Global list of metric tags
   # @option config [Integer] :sample_rate Global sample rate (as a percentage), between: (1-100)
+  # @option config [String] :namespace Global default namespace
   # @option config [Integer] :flush_size Buffer flush upper size limit
-  # @return [Object] The Telemetron client
+  # @return [Object] The Statful client
   def initialize(config = {})
     user_config = MyHash[config].symbolize_keys
 
-    if !user_config.has_key?(:prefix)
-      raise ArgumentError.new('Prefix is undefined')
+    if !user_config.has_key?(:transport) || !%w(udp http).include?(user_config[:transport])
+      raise ArgumentError.new('Transport is missing or invalid')
+    end
+
+    if user_config[:transport] == 'http'
+      raise ArgumentError.new('Token is missing') if user_config[:token].nil?
     end
 
     if user_config.has_key?(:sample_rate) && !user_config[:sample_rate].between?(1, 100)
@@ -32,16 +40,19 @@ class TelemetronClient
     end
 
     default_config = {
-      :host => '127.0.0.1',
-      :port => 2013,
+      :host => 'api.statful.com',
+      :port => 443,
+      :transport => 'http',
       :tags => {},
       :sample_rate => 100,
-      :flush_size => 10
+      :namespace => 'application',
+      :flush_size => 5
     }
 
     @config = default_config.merge(user_config)
     @logger = @config[:logger]
     @buffer = []
+    @http = Net::HTTP.new(@config[:host], @config[:port])
 
     self
   end
@@ -52,18 +63,25 @@ class TelemetronClient
   # @param value [Numeric] Value of the metric
   # @param [Hash] options The options to apply to the metric
   # @option options [Hash] :tags Tags to associate to the metric
-  # @option options [Array<String>] :agg List of aggregations to be applied by the Telemetron
+  # @option options [Array<String>] :agg List of aggregations to be applied by Statful
   # @option options [Integer] :agg_freq Aggregation frequency in seconds
   # @option options [String] :namespace Namespace of the metric
   def timer(name, value, options = {})
+    tags = @config[:tags].merge({:unit => 'ms'})
+    tags = tags.merge(options[:tags]) unless options[:tags].nil?
+
+    aggregations = %w(avg p90 count)
+    aggregations.concat(options[:agg]) unless options[:agg].nil?
+
     opts = {
-      :tags => {:unit => 'ms'},
-      :agg => %w(avg p90 count count_ps),
       :agg_freq => 10,
       :namespace => 'application'
     }.merge(MyHash[options].symbolize_keys)
 
-    put("timer.#{name}", opts[:tags], value, opts[:agg], opts[:agg_freq], @config[:sample_rate], opts[:namespace])
+    opts[:tags] = tags
+    opts[:agg] = aggregations
+
+    _put("timer.#{name}", opts[:tags], value, opts[:agg], opts[:agg_freq], @config[:sample_rate], opts[:namespace])
   end
 
   # Sends a counter
@@ -72,18 +90,25 @@ class TelemetronClient
   # @param value [Numeric] Increment/Decrement value, this will be truncated with `to_int`
   # @param [Hash] options The options to apply to the metric
   # @option options [Hash] :tags Tags to associate to the metric
-  # @option options [Array<String>] :agg List of aggregations to be applied by the Telemetron
+  # @option options [Array<String>] :agg List of aggregations to be applied by the Statful
   # @option options [Integer] :agg_freq Aggregation frequency in seconds
   # @option options [String] :namespace Namespace of the metric
   def counter(name, value, options = {})
+    tags = @config[:tags]
+    tags = tags.merge(options[:tags]) unless options[:tags].nil?
+
+    aggregations = %w(sum count)
+    aggregations.concat(options[:agg]) unless options[:agg].nil?
+
     opts = {
-      :tags => {},
-      :agg => %w(sum count count_ps),
       :agg_freq => 10,
       :namespace => 'application'
     }.merge(MyHash[options].symbolize_keys)
 
-    put("counter.#{name}", opts[:tags], value.to_i, opts[:agg], opts[:agg_freq], @config[:sample_rate], opts[:namespace])
+    opts[:tags] = tags
+    opts[:agg] = aggregations
+
+    _put("counter.#{name}", opts[:tags], value.to_i, opts[:agg], opts[:agg_freq], @config[:sample_rate], opts[:namespace])
   end
 
   # Sends a gauge
@@ -92,23 +117,49 @@ class TelemetronClient
   # @param value [Numeric] Value of the metric
   # @param [Hash] options The options to apply to the metric
   # @option options [Hash] :tags Tags to associate to the metric
-  # @option options [Array<String>] :agg List of aggregations to be applied by the Telemetron
+  # @option options [Array<String>] :agg List of aggregations to be applied by Statful
   # @option options [Integer] :agg_freq Aggregation frequency in seconds
   # @option options [String] :namespace Namespace of the metric
   def gauge(name, value, options = {})
+    tags = @config[:tags]
+    tags = tags.merge(options[:tags]) unless options[:tags].nil?
+
+    aggregations = %w(last)
+    aggregations.concat(options[:agg]) unless options[:agg].nil?
+
     opts = {
-      :tags => {},
-      :agg => %w(last),
       :agg_freq => 10,
       :namespace => 'application'
     }.merge(MyHash[options].symbolize_keys)
 
-    put("gauge.#{name}", opts[:tags], value, opts[:agg], opts[:agg_freq], @config[:sample_rate], opts[:namespace])
+    opts[:tags] = tags
+    opts[:agg] = aggregations
+
+    _put("gauge.#{name}", opts[:tags], value, opts[:agg], opts[:agg_freq], @config[:sample_rate], opts[:namespace])
   end
+
 
   # Flush metrics buffer
   def flush_metrics
     flush
+  end
+
+  # Adds a new metric to the buffer
+  #
+  # @private
+  # @param metric [String] Name of the metric, ex: `response_time`
+  # @param value [Numeric] Value of the metric
+  # @param tags [Hash] Tags to associate to the metric
+  # @param agg [Array<String>] List of aggregations to be applied by Statful
+  # @param agg_freq [Integer] Aggregation frequency in seconds
+  # @param sample_rate [Integer] Sampling rate, between: (1-100)
+  # @param namespace [String] Namespace of the metric
+  # @param timestamp [Integer] Timestamp of the metric
+  def put(metric, tags, value, agg = [], agg_freq = 10, sample_rate = nil, namespace = 'application', timestamp = nil)
+    _tags = @config[:tags]
+    _tags = _tags.merge(tags) unless tags.nil?
+
+    _put(metric, _tags, value, agg, agg_freq, sample_rate, namespace, timestamp)
   end
 
   private
@@ -122,30 +173,31 @@ class TelemetronClient
   # @param metric [String] Name of the metric, ex: `response_time`
   # @param value [Numeric] Value of the metric
   # @param tags [Hash] Tags to associate to the metric
-  # @param agg [Array<String>] List of aggregations to be applied by the Telemetron
+  # @param agg [Array<String>] List of aggregations to be applied by Statful
   # @param agg_freq [Integer] Aggregation frequency in seconds
   # @param sample_rate [Integer] Sampling rate, between: (1-100)
   # @param namespace [String] Namespace of the metric
-  def put(metric, tags, value, agg = [], agg_freq = 10, sample_rate = nil, namespace = 'application')
-    metric_name = "#{@config[:prefix]}.#{namespace}.#{metric}"
+  # @param timestamp [Integer] Timestamp of the metric
+  def _put(metric, tags, value, agg = [], agg_freq = 10, sample_rate = nil, namespace = 'application', timestamp = nil)
+    metric_name = "#{namespace}.#{metric}"
     sample_rate_normalized = sample_rate / 100
+    timestamp = Time.now.to_i if timestamp.nil?
 
-    @config.has_key?(:app) ?
-      merged_tags = tags.merge({:app => @config[:app]}).merge(@config[:tags]) :
-      merged_tags = tags.merge(@config[:tags])
+    @config.has_key?(:app) ? merged_tags = tags.merge({:app => @config[:app]}) : merged_tags = tags
 
     if Random.new.rand(1..100)*0.01 <= sample_rate_normalized
       flush_line = merged_tags.keys.inject(metric_name) { |previous, tag|
         "#{previous},#{tag.to_s}=#{merged_tags[tag]}"
       }
 
-      flush_line += " #{value} #{Time.now.to_i}"
+      flush_line += " #{value} #{timestamp}"
 
-      if !agg.empty?
+      unless agg.empty?
         agg.push(agg_freq)
         flush_line += " #{agg.join(',')}"
-        flush_line += sample_rate ? " #{sample_rate}" : ''
       end
+
+      flush_line += sample_rate ? " #{sample_rate}" : ''
 
       put_raw(flush_line)
     end
@@ -162,23 +214,23 @@ class TelemetronClient
     end
   end
 
-  # Flushed the metrics to the Telemetron via UDP
+  # Flushed the metrics to the Statful via UDP
   #
   # @private
   def flush
-    if !@buffer.empty?
+    unless @buffer.empty?
       message = @buffer.join('\n')
 
       # Handle socket errors by just logging if we have a logger instantiated
       # We could eventually save the buffer state but that would require us to manage the buffer size etc.
       begin
-        if @config.has_key?(:dryrun) && @config[:dryrun]
-          @logger.debug("Flushing metrics: #{message}") unless @logger.nil?
-        else
-          socket.send(message)
+        @logger.debug("Flushing metrics: #{message}") unless @logger.nil?
+
+        if !@config.has_key?(:dryrun) || !@config[:dryrun]
+          transport_send(message)
         end
       rescue SocketError => ex
-        @logger.error("Telemetron: #{ex} on #{@config[:host]}:#{@config[:port]}") unless @logger.nil?
+        @logger.debug("Statful: #{ex} on #{@config[:host]}:#{@config[:port]}") unless @logger.nil?
         false
       ensure
         @buffer.clear
@@ -186,13 +238,54 @@ class TelemetronClient
     end
   end
 
+  # Delegate flushing messages to the proper transport
+  #
+  # @private
+  # @param message
+  def transport_send(message)
+    case @config[:transport]
+      when 'http'
+        http_transport(message)
+      when 'udp'
+        udp_transport(message)
+      else
+        @logger.debug("Failed to flush message due to invalid transport: #{@config[:transport]}") unless @logger.nil?
+    end
+  end
 
-  # Create a new UDP socket
+
+  # Sends message via http transport
+  #
+  # @private
+  # @param message
+  # :nocov:
+  def http_transport(message)
+    headers = {
+      'Content-Type' => 'application/json',
+      'M-Api-Token' => @config[:token]
+    }
+    response = @http.send_request('PUT', '/tel/v2.0/metrics', message, headers)
+
+    if response.code != '201'
+      @logger.debug("Failed to flush message via http with: #{response.code} - #{response.msg}") unless @logger.nil?
+    end
+  end
+
+  # Sends message via udp transport
+  #
+  # @private
+  # @param message
+  # :nocov:
+  def udp_transport(message)
+    udp_socket.send(message)
+  end
+
+  # Return a new or existing udp socket
   #
   # @private
   # :nocov:
-  def socket
-    Thread.current[:telemetron_socket] ||= UDPSocket.new(Addrinfo.udp(@config[:host], @config[:port]).afamily)
+  def udp_socket
+    Thread.current[:statful_socket] ||= UDPSocket.new(Addrinfo.udp(@config[:host], @config[:port]).afamily)
   end
 
   # Custom Hash implementation to add a symbolize_keys method

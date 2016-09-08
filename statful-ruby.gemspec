@@ -2,12 +2,12 @@ lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |s|
-  s.name          = 'telemetron-client'
+  s.name          = 'statful-client'
   s.version       =  '0.0.1'
-  s.summary       = 'Telemetron Ruby Client'
-  s.description   = 'Telemetron Ruby Client (https://telemetron.io)'
+  s.summary       = 'Statful Ruby Client'
+  s.description   = 'Statful Ruby Client (https://www.statful.com)'
   s.license       = 'MIT'
-  s.homepage      = 'https://bitbucket.org/mindera/telemetron-client-ruby'
+  s.homepage      = 'https://bitbucket.org/statful/statful-client-ruby'
   s.authors       = ['Miguel Fonseca']
   s.email         = 'miguel.fonseca@mindera.com'
 

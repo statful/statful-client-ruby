@@ -1,6 +1,6 @@
-# telemetron-client-ruby
+# statful-client-ruby
 
-Telemetron ruby client.
+Statful ruby client.
 
 TODO
 
@@ -37,7 +37,7 @@ $ rake spec
 Use gem to build a gem according to the spec if required:
 
 ```
-$ gem build telemetron-ruby.gemspec
+$ gem build statful-ruby.gemspec
 ```
 
 ### Docs
