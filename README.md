@@ -1,7 +1,7 @@
 Statful Client for Ruby
 ==============
 
-[[![Build Status](https://travis-ci.org/statful/statful-client-ruby.svg?branch=master)](https://travis-ci.org/statful/statful-client-ruby)
+[![Build Status](https://travis-ci.org/statful/statful-client-ruby.svg?branch=master)](https://travis-ci.org/statful/statful-client-ruby)
 
 Staful client for Ruby. This client is intended to gather metrics and send them to Statful.
 
@@ -129,7 +129,7 @@ The custom options that can be set on config param are detailed below.
 | Option | Description | Type | Default for Counter | Default for Gauge | Default for Timer | Default for Put |
 |:---|:---|:---|:---|:---|:---|:---|:---|
 | _agg_ | Defines the aggregations to be executed. These aggregations are merged with the ones configured globally, including method defaults.<br><br> **Valid Aggregations:** `avg, count, sum, first, last, p90, p95, min, max` | `Array` | `['avg', 'p90']` | `[last]` | `['avg', 'p90', 'count']` | `[]` |
-| _aggFreq_ | Defines the aggregation frequency in **seconds**. It overrides the global aggregation frequency configuration.<br><br> **Valid Aggregation Frequencies:** `10, 30, 60, 120, 180, 300` | `Integerw` | `10` | `10` | `10` | `10`' |
+| _aggFreq_ | Defines the aggregation frequency in **seconds**. It overrides the global aggregation frequency configuration.<br><br> **Valid Aggregation Frequencies:** `10, 30, 60, 120, 180, 300` | `Integer` | `10` | `10` | `10` | `10` |
 | _namespace_ | Defines the namespace of the metric. It overrides the global namespace configuration. | `String` | `application` | `application` | `application` | `application` |
 | _tags_ | Defines the tags of the metric. These tags are merged with the ones configured globally, including method defaults. | `Object` | `{}` | `{}` | `{ unit: 'ms' }` | `{}` |
 | _timestamp_ | Defines the timestamp of the metric. This timestamp is a **POSIX/Epoch** time in **seconds**. | `String` | `current timestamp` | `current timestamp` | `current timestamp` | `current timestamp` |
