@@ -66,7 +66,7 @@ config = {
 statful = StatfulClient.new(config)
 ```
 
-> ** IMPORTANT:** UDP transport is only available by using an in-premises [statful-relay](https://github.com/statful/statful-relay).
+> **IMPORTANT:** UDP transport is only available by using an in-premises [statful-relay](https://github.com/statful/statful-relay).
 
 ### HTTP Configuration
 

@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
 
-gemspec :name => 'statful-ruby'
+gemspec :name => 'statful-client'
 
