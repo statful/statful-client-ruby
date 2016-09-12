@@ -29,7 +29,7 @@ end
 
 Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new({:color => true, :slow_count => 5 }))
 
-require 'statful'
+require 'statful-client'
 
 # Shamelessly stolen from the statsd-ruby client
 class FakeUDPSocket

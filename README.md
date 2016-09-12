@@ -25,8 +25,7 @@ Staful client for Ruby. This client is intended to gather metrics and send them 
 ## Installation
 
 ```bash
-$ git clone git@github.com:statful/statful-client-ruby.git
-$ cd statful-client-ruby && bundle install
+$ gem install statful-client
 ```
 
 ## Quick start
@@ -34,7 +33,14 @@ $ cd statful-client-ruby && bundle install
 After installing Statful Client you are ready to use it. The quickest way is to do the following:
 
 ```ruby
-# TODO
+require 'statful-client'
+
+config = {
+  :transport => 'http',
+  :token => 'test_token',
+}
+
+statful = StatfulClient.new(config)
 ```
 
 > **IMPORTANT:** This configuration uses the default **host** and **port**. You can learn more about configuration in [Reference](#reference).
@@ -48,15 +54,35 @@ You can find here some useful usage examples of the Statful Client. In the follo
 Creates a simple UDP configuration for the client.
 
 ```ruby
-# TODO
+require 'statful-client'
+
+config = {
+  :transport => 'udp',
+  :host => 'in_premises_statful_relay',
+  :tags => { :test_tag => 'test_tag_value' },
+  :flush_size => 10
+}
+
+statful = StatfulClient.new(config)
 ```
+
+> ** IMPORTANT:** UDP transport is only available by using an in-premises [statful-relay](https://github.com/statful/statful-relay).
 
 ### HTTP Configuration
 
 Creates a simple HTTP API configuration for the client.
 
 ```ruby
-# TODO
+require 'statful-client'
+
+config = {
+  :transport => 'http',
+  :token => 'test_token',
+  :tags => { :test_tag => 'test_tag_value' },
+  :flush_size => 10
+}
+
+statful = StatfulClient.new(config)
 ```
 
 ### Logger configuration
@@ -66,7 +92,21 @@ Creates a simple client configuration and adds your favourite logger to the clie
 **Just assure that logger object supports, at least, warn, debug and error methods**.
 
 ```ruby
-# TODO
+require 'statful-client'
+require 'logger'
+
+logger = Logger.new(STDOUT)
+logger.level = Logger::DEBUG
+
+config = {
+  :transport => 'http',
+  :token => 'test_token',
+  :tags => { :test_tag => 'test_tag_value' },
+  :logger => logger,
+  :flush_size => 10
+}
+
+statful = StatfulClient.new(config)
 ```
 
 ### Defaults Configuration Per Method
@@ -74,15 +114,50 @@ Creates a simple client configuration and adds your favourite logger to the clie
 Creates a configuration for the client with custom default options per method.
 
 ```ruby
-# TODO
+require 'statful-client'
+
+config = {
+  :transport => 'http',
+  :token => 'test_token',
+  :tags => { :test_tag => 'test_tag_value' },
+  :flush_size => 10,
+  :defaults => {
+    :counter => { :agg => %w(avg), :aggFreq => 180 },
+    :gauge => { :agg => %w(first), :aggFreq => 180 },
+    :timer => { :tags => { :cluster => 'test' }, :agg => %s(count), :aggFreq => 180 }
+  }
+}
+
+statful = StatfulClient.new(config)
 ```
 
 ### Mixed Complete Configuration
 
-Creates a configuration defining a value for every available option.
+Creates a mixed configuration for possible real scenario.
 
 ```ruby
-# TODO
+require 'statful-client'
+require 'logger'
+
+logger = Logger.new(STDOUT)
+logger.level = Logger::DEBUG
+
+config = {
+  :transport => 'http',
+  :token => 'test_token',
+  :tags => { :test_tag => 'test_tag_value' },
+  :dryrun => true,
+  :logger => logger,
+  :flush_size => 10,
+  :namespace => 'my_test_app',
+  :defaults => {
+    :counter => { :agg => %w(avg), :aggFreq => 180 },
+    :gauge => { :agg => %w(first), :aggFreq => 180 },
+    :timer => { :tags => { :cluster => 'test' }, :agg => %s(count), :aggFreq => 180 }
+  }
+}
+
+statful = StatfulClient.new(config)
 ```
 
 ### Add metrics
@@ -90,7 +165,27 @@ Creates a configuration defining a value for every available option.
 Creates a simple client configuration and use it to send some metrics.
 
 ```ruby
-# TODO
+require 'statful-client'
+
+config = {
+  :transport => 'http',
+  :token => 'test_token',
+  :tags => { :test_tag => 'test_tag_value' },
+  :flush_size => 1
+}
+
+statful = StatfulClient.new(config)
+
+# Send three different metrics (timer, counter and gauge)
+statful.timer("test_timer", 100)
+statful.counter("test_counter", 1)
+statful.gauge("test_gauge", 33)
+
+# Send a timer with custom aggregations
+statful.timer("test_timer", 100, { :agg => %w(p50), :aggFreq => 60 })
+
+# Send a timer with custom tags
+statful.timer("test_timer", 100, { :tags => {:host => 'test_host', :status => 'SUCCESS' } }
 ```
 
 ## Reference

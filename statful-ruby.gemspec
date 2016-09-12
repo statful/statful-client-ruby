@@ -3,15 +3,15 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |s|
   s.name          = 'statful-client'
-  s.version       =  '0.0.1'
+  s.version       =  '1.0.0'
   s.summary       = 'Statful Ruby Client'
   s.description   = 'Statful Ruby Client (https://www.statful.com)'
   s.license       = 'MIT'
-  s.homepage      = 'https://bitbucket.org/statful/statful-client-ruby'
+  s.homepage      = 'https://github.com/statful/statful-client-ruby'
   s.authors       = ['Miguel Fonseca']
   s.email         = 'miguel.fonseca@mindera.com'
 
-  s.files         = Dir['lib/**/*.rb'] + Dir['bin/*']
+  s.files         = Dir['lib/**/*.rb']
   s.require_paths = ['lib']
 
   s.add_development_dependency 'bundler'

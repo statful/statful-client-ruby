@@ -8,6 +8,10 @@ require 'net/http'
 class StatfulClient
   attr_reader :config
 
+  def new
+    self
+  end
+
   # Initialize the client
   #
   # @param [Hash] config Client bootstrap configuration
@@ -17,7 +21,7 @@ class StatfulClient
   # @option config [Integer] :timeout Timeout for http transport
   # @option config [String] :token Authentication account token for http transport
   # @option config [String] :app Global metric app tag
-  # @option config [TrueClass/FalseClass] :dry Enable dry-run mode
+  # @option config [TrueClass/FalseClass] :dryrun Enable dry-run mode
   # @option config [Object] :logger Logger instance that supports debug (if dryrun is enabled) and error methods
   # @option config [Hash] :tags Global list of metric tags
   # @option config [Integer] :sample_rate Global sample rate (as a percentage), between: (1-100)
