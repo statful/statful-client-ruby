@@ -2,6 +2,7 @@ Statful Client for Ruby
 ==============
 
 [![Build Status](https://travis-ci.org/statful/statful-client-ruby.svg?branch=master)](https://travis-ci.org/statful/statful-client-ruby)
+[![Gem Version](https://badge.fury.io/rb/statful-client.svg)](https://badge.fury.io/rb/statful-client)
 
 Staful client for Ruby. This client is intended to gather metrics and send them to Statful.
 
