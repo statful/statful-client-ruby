@@ -153,17 +153,23 @@ class StatfulClient
   # @private
   # @param metric [String] Name of the metric, ex: `response_time`
   # @param value [Numeric] Value of the metric
-  # @param tags [Hash] Tags to associate to the metric
-  # @param agg [Array<String>] List of aggregations to be applied by Statful
-  # @param agg_freq [Integer] Aggregation frequency in seconds
-  # @param sample_rate [Integer] Sampling rate, between: (1-100)
-  # @param namespace [String] Namespace of the metric
-  # @param timestamp [Integer] Timestamp of the metric
-  def put(metric, tags, value, agg = [], agg_freq = 10, sample_rate = nil, namespace = 'application', timestamp = nil)
-    _tags = @config[:tags]
-    _tags = _tags.merge(tags) unless tags.nil?
+  # @param [Hash] options The options to apply to the metric
+  # @param options tags [Hash] Tags to associate to the metric
+  # @param options agg [Array<String>] List of aggregations to be applied by Statful
+  # @param options agg_freq [Integer] Aggregation frequency in seconds
+  # @param options sample_rate [Integer] Sampling rate, between: (1-100)
+  # @param options namespace [String] Namespace of the metric
+  # @param options timestamp [Integer] Timestamp of the metric
+  def put(metric, value, options = {})
+    tags = @config[:tags]
+    tags = tags.merge(options[:tags]) unless options[:tags].nil?
 
-    _put(metric, _tags, value, agg, agg_freq, sample_rate, namespace, timestamp)
+    agg = options[:agg].nil? ? [] : options[:agg]
+
+    sample_rate = options[:sample_rate].nil? ? 100 : options[:sample_rate]
+    namespace = options[:namespace].nil? ? 'application' : options[:namespace]
+
+    _put(metric, tags, value, agg, options[:agg_freq], sample_rate, namespace, options[:timestamp])
   end
 
   private
@@ -182,7 +188,7 @@ class StatfulClient
   # @param sample_rate [Integer] Sampling rate, between: (1-100)
   # @param namespace [String] Namespace of the metric
   # @param timestamp [Integer] Timestamp of the metric
-  def _put(metric, tags, value, agg = [], agg_freq = 10, sample_rate = nil, namespace = 'application', timestamp = nil)
+  def _put(metric, tags, value, agg = [], agg_freq = 10, sample_rate = 100, namespace = 'application', timestamp = nil)
     metric_name = "#{namespace}.#{metric}"
     sample_rate_normalized = sample_rate / 100
     timestamp = Time.now.to_i if timestamp.nil?

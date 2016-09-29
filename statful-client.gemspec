@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |s|
   s.name          = 'statful-client'
-  s.version       =  '1.0.0'
+  s.version       =  '2.0.0'
   s.summary       = 'Statful Ruby Client'
   s.description   = 'Statful Ruby Client (https://www.statful.com)'
   s.license       = 'MIT'

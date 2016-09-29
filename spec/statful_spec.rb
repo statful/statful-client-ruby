@@ -189,13 +189,26 @@ describe StatfulClient do
 
   describe '#put' do
     it 'should format the message according to the statful spec' do
-      @statful.put('test_metric', {}, 256, [], nil, 100, 'application', nil)
+      options = {:tags => {}, :agg => [], :sample_rate => 100, :namespace => 'application'}
+
+      @statful.put('test_metric', 256, options)
       @statful.udp_socket.recv.must_match(/^application.test_metric,tag=test_tag,app=test_app 256 \d+ 100$/)
     end
 
     describe 'with an explicit timestamp' do
       it 'should format the message according to the statful spec' do
-        @statful.put('test_metric', {}, 256, [], nil, 100, 'application', 12345)
+        options = {:tags => {}, :agg => [], :sample_rate => 100, :namespace => 'application', :timestamp => 12345}
+
+        @statful.put('test_metric', 256, options)
+        @statful.udp_socket.recv.must_match(/^application.test_metric,tag=test_tag,app=test_app 256 12345 100$/)
+      end
+    end
+
+    describe 'without sample rate' do
+      it 'should apply the default sample rate and format the message according to the statful spec' do
+        options = {:tags => {}, :agg => [], :namespace => 'application', :timestamp => 12345}
+
+        @statful.put('test_metric', 256, options)
         @statful.udp_socket.recv.must_match(/^application.test_metric,tag=test_tag,app=test_app 256 12345 100$/)
       end
     end
