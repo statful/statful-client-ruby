@@ -57,6 +57,7 @@ class StatfulClient
     @logger = @config[:logger]
     @buffer = []
     @http = Net::HTTP.new(@config[:host], @config[:port])
+    @http.use_ssl = true # must enforce use of ssl, otherwise it will raise EOFError: end of file reached
 
     self
   end
@@ -319,4 +320,3 @@ class StatfulClient
     end
   end
 end
-
