@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |s|
   s.name          = 'statful-client'
-  s.version       =  '2.0.1'
+  s.version       =  '2.1.0'
   s.summary       = 'Statful Ruby Client'
   s.description   = 'Statful Ruby Client (https://www.statful.com)'
   s.license       = 'MIT'
@@ -13,6 +13,8 @@ Gem::Specification.new do |s|
 
   s.files         = Dir['lib/**/*.rb']
   s.require_paths = ['lib']
+
+  s.add_runtime_dependency 'concurrent-ruby-ext'
 
   s.add_development_dependency 'bundler'
   s.add_development_dependency 'yard'

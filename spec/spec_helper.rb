@@ -36,7 +36,7 @@ class FakeUDPSocket
   attr_accessor :buffer
 
   def initialize
-    @buffer = []
+    @buffer = Queue.new
   end
 
   def send(message)
@@ -48,7 +48,7 @@ class FakeUDPSocket
   end
 
   def clear
-    @buffer = []
+    @buffer = Queue.new
   end
 
   def to_s

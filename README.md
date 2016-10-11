@@ -88,7 +88,7 @@ statful = StatfulClient.new(config)
 
 ### Logger configuration
 
-Creates a simple client configuration and adds your favourite logger to the client. 
+Creates a simple client configuration and adds your favourite logger to the client.
 
 **Just assure that logger object supports, at least, warn, debug and error methods**.
 
@@ -209,7 +209,8 @@ The custom options that can be set on config param are detailed below.
 | _logger_ | Defines logger object. | `Object` | **none** | **NO** |
 | _tags_ | Defines the global tags. | `Hash` | `{}` | **NO** |
 | _sample_rate_ | Defines the rate sampling. **Should be a number between [1, 100]**. | `Integer` | `100` | **NO** |
-| _flush_size_ | Defines the maximum buffer size before performing a flush. | `Integer` | `100` | **NO** |
+| _flush_size_ | Defines the maximum buffer size before performing a flush. | `Integer` | `5` | **NO** |
+| _thread_pool_size_ | Defines the maximum thread pool size. | `Integer` | `5` | **NO** |
 | _namespace_ | Defines the global namespace. | `String` | `application` | **NO** |
 | _default_ | Object to set methods options. | `Object` | `{}` | **NO** |
 

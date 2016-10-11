@@ -1,6 +1,7 @@
 require 'socket'
 require 'delegate'
 require 'net/http'
+require 'concurrent'
 
 # Statful Client Instance
 #
@@ -27,6 +28,7 @@ class StatfulClient
   # @option config [Integer] :sample_rate Global sample rate (as a percentage), between: (1-100)
   # @option config [String] :namespace Global default namespace
   # @option config [Integer] :flush_size Buffer flush upper size limit
+  # @option config [Integer] :thread_pool_size Thread pool upper size limit
   # @return [Object] The Statful client
   def initialize(config = {})
     user_config = MyHash[config].symbolize_keys
@@ -50,12 +52,16 @@ class StatfulClient
       :tags => {},
       :sample_rate => 100,
       :namespace => 'application',
-      :flush_size => 5
+      :flush_size => 5,
+      :thread_pool_size => 5
     }
 
     @config = default_config.merge(user_config)
     @logger = @config[:logger]
-    @buffer = []
+
+    @buffer = MyQueue.new
+    @pool = Concurrent::FixedThreadPool.new(@config[:thread_pool_size])
+
     @http = Net::HTTP.new(@config[:host], @config[:port])
     @http.use_ssl = true # must enforce use of ssl, otherwise it will raise EOFError: end of file reached
 
@@ -230,7 +236,7 @@ class StatfulClient
   # @private
   def flush
     unless @buffer.empty?
-      message = @buffer.join('\n')
+      message = @buffer.to_a.join('\n')
 
       # Handle socket errors by just logging if we have a logger instantiated
       # We could eventually save the buffer state but that would require us to manage the buffer size etc.
@@ -275,10 +281,18 @@ class StatfulClient
       'Content-Type' => 'application/json',
       'M-Api-Token' => @config[:token]
     }
-    response = @http.send_request('PUT', '/tel/v2.0/metrics', message, headers)
 
-    if response.code != '201'
-      @logger.debug("Failed to flush message via http with: #{response.code} - #{response.msg}") unless @logger.nil?
+    @pool.post do
+      begin
+        response = @http.send_request('PUT', '/tel/v2.0/metrics', message, headers)
+
+        if response.code != '201'
+          @logger.debug("Failed to flush message via http with: #{response.code} - #{response.msg}") unless @logger.nil?
+        end
+      rescue StandardError => ex
+        @logger.debug("Statful: #{ex} on #{@config[:host]}:#{@config[:port]}") unless @logger.nil?
+        false
+      end
     end
   end
 
@@ -317,6 +331,18 @@ class StatfulClient
       end
 
       symbolize[self]
+    end
+  end
+
+  # Custom Queue implementation to add a to_a method
+  #
+  # @private
+  class MyQueue < Queue
+    # Transform Queue to Array
+    #
+    # @return [Array] queue as array
+    def to_a
+      [].tap { |array| array << pop until empty? }
     end
   end
 end
