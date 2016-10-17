@@ -49,7 +49,7 @@ describe StatfulClient do
     end
 
     it 'should create an empty buffer' do
-      @statful.buffer.must_equal []
+      @statful.buffer.size.must_equal 0
     end
 
     it 'should raise ArgumentError if transport is missing' do
@@ -141,7 +141,7 @@ describe StatfulClient do
         @statful.buffer.clear
         @statful.timer('test_dryrun', 500)
         @log.string.must_match(/Flushing metrics: application.timer.test_dryrun,tag=test_tag,unit=ms,app=test_app 500 \d+ avg,p90,count,10 100/)
-        @statful.udp_socket.buffer.must_equal []
+        @statful.udp_socket.buffer.size.must_equal 0
         @statful.buffer.size.must_equal 0
       end
     end
