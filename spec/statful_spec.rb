@@ -229,6 +229,15 @@ describe StatfulClient do
       @log.string.must_match(/Flushing metrics: application.timer.test_log,tag=test_tag,unit=ms,app=test_app 500 \d+ avg,p90,count,10 100/)
     end
 
+    it 'should write proper new lines between metrics' do
+      @statful.logger.level = Logger::DEBUG
+      @statful.config[:flush_size] = 2
+      @statful.timer('test_log', 500)
+      @statful.timer('test_log', 500)
+      @log.string.must_match(/Flushing metrics: application.timer.test_log,tag=test_tag,unit=ms,app=test_app 500 \d+ avg,p90,count,10 100\napplication.timer.test_log,tag=test_tag,unit=ms,app=test_app 500 \d+ avg,p90,count,10 100/)
+      @statful.config[:flush_size] = 1
+    end
+
     it 'should not write to the log unless debug' do
       @statful.logger.level = Logger::INFO
       @statful.timer('test_log', 500)

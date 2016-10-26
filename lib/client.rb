@@ -236,7 +236,7 @@ class StatfulClient
   # @private
   def flush
     unless @buffer.empty?
-      message = @buffer.to_a.join('\n')
+      message = @buffer.to_a.join("\n")
 
       # Handle socket errors by just logging if we have a logger instantiated
       # We could eventually save the buffer state but that would require us to manage the buffer size etc.
